@@ -2,8 +2,8 @@ package SIM.Mohamed230544975;
 
 import javax.swing.*;
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 
@@ -27,7 +27,32 @@ public class Main {
                     null, options, options[0]);
 
             if (mode != JOptionPane.CLOSED_OPTION) {
-                convertImage(imagePath, mode);
+                // Start a new thread for the processing dialog
+                new Thread(() -> {
+                    JDialog processingDialog = createProcessingDialog();
+                    processingDialog.setVisible(true); // Show the dialog before processing
+                }).start();
+
+                // Run the processing in a background thread
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        convertImage(imagePath, mode); // Call the conversion method
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        // Close the processing dialog in the Event Dispatch Thread
+                        SwingUtilities.invokeLater(() -> {
+                            for (Window window : Window.getWindows()) {
+                                if (window instanceof JDialog && window.isVisible()) {
+                                    window.dispose(); // Close any visible dialog
+                                }
+                            }
+                        });
+                    }
+                }.execute(); // Start the SwingWorker
             }
         }
     }
@@ -72,7 +97,6 @@ public class Main {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int pixelColor = inputImage.getRGB(x, y);
-
                 // Extract color components
                 Color color = new Color(pixelColor);
                 int red = color.getRed();
@@ -96,5 +120,18 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static JDialog createProcessingDialog() {
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Processing Image...");
+        dialog.setModal(true); // Prevent interaction with other windows
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setSize(300, 100);
+        dialog.setLocationRelativeTo(null); // Center the dialog
+
+        JLabel label = new JLabel("Processing... Please wait.", SwingConstants.CENTER);
+        dialog.add(label);
+        return dialog; // Return the dialog without showing it yet
     }
 }
