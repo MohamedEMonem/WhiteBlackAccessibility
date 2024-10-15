@@ -1,30 +1,35 @@
+# White and Black Accessibility
 
-# White And Black Accessibility
+A software tool that converts JPG/PNG images into black and white or greyscale.
 
-Software To convert any JPG/PNG images into Black And White pic or Greyscale too 
+## Features
+- Convert any JPG/PNG image to black and white or greyscale.
+- Simple and easy-to-use interface.
+- Fast and lightweight image processing.
 
-## Authors
-
-- [@MohamedEMonem](https://github.com/MohamedEMonem)
-
+## Author
+- [**Mohamed E. Monem**](https://github.com/MohamedEMonem)
 
 ## Lessons Learned
-
-What did you learn while building this project? What challenges did you face and how did you overcome them?
-
-1. First Lesson is to read an image using BufferedImage in Java and ImageIO
-2. how to iterate over image pixel by pixel and read all colors values from each pixel
-3. luminance formula RGB --> value = (0.299 * red + 0.587 * green + 0.114 * blue)
-4. how to change image's pixel color 
-5. how to write an image using ImageIO.write method
-6. how to convert a Java Jar file to be excutable on a Windows Machine using launch4j
-7. how to make a programe setup file with Inno Setup Compiler
-
+While building this project, I gained valuable insights and overcame a variety of challenges:
+1. **Reading Images**: Learned to read images using `BufferedImage` and `ImageIO` in Java.
+2. **Pixel Manipulation**: Discovered how to iterate over each pixel and extract color values.
+3. **Luminance Formula**: Applied the formula for converting RGB to greyscale: Value = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+4. **Image Modification**: Gained experience in modifying pixel color data.
+5. **Saving Images**: Used `ImageIO.write()` to save the edited image.
+6. **Creating Executables**: Converted Java JAR files into executables using **Launch4j**.
+7. **Setup Creation**: Learned to create a program setup file with **Inno Setup Compiler**.
 
 ## Installation
+To install **White and Black Accessibility**, download and run the installer from the link below:
 
-Install WhiteBlackAccessibility with file installer
+[Download WhiteBlackAccessibility Setup](https://github.com/MohamedEMonem/WhiteBlackAccessibility/releases/download/WhiteBlackAccessibility/WhiteBlackAccessibilitySetup.exe)
 
-Just use this setup file https://github.com/MohamedEMonem/WhiteBlackAccessibility/releases/download/WhiteBlackAccessibility/WhiteBlackAccessibilitySetup.exe
+## Usage
+1. Run the setup file to install.
+2. Open the application, select an image, and choose whether to convert it to black and white or greyscale.
 
-    
+## Future Enhancements
+- Adding batch processing for multiple images.
+- Supporting additional file formats.
+
