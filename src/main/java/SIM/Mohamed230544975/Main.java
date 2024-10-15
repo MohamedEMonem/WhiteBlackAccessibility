@@ -9,10 +9,29 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) {
-        String imagePath = "C:\\Users\\moham\\IdeaProjects\\white_black_accessibility\\src\\main\\java\\SIM\\Mohamed230544975\\image2.jpg";
-        convertImage(imagePath, 0);
-        convertImage(imagePath, 1);
+        // Create a Swing UI to choose the image file
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select an Image File");
+
+        // Open file chooser dialog
+        int returnValue = fileChooser.showOpenDialog(null);
+
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            String imagePath = selectedFile.getAbsolutePath();
+
+            // Create an option pane for user to choose the processing mode
+            String[] options = {"Black and White", "Grayscale"};
+            int mode = JOptionPane.showOptionDialog(null, "Choose the image processing mode:",
+                    "Image Processing Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
+                    null, options, options[0]);
+
+            if (mode != JOptionPane.CLOSED_OPTION) {
+                convertImage(imagePath, mode);
+            }
+        }
     }
+
     public static void convertImage(String path, int mode) {
         File file = new File(path);
         try {
@@ -27,13 +46,24 @@ public class Main {
                 throw new IllegalArgumentException("Invalid mode. Use 0 for Black-and-White and 1 for Grayscale.");
             }
 
-            String outputFilePath = path + (mode == 0 ? "_black_white_output.jpg" : "_grayscale_output.jpg");
-            ImageIO.write(outputImage, "jpg", new File(outputFilePath));
+            // Allow user to choose where to save the output image
+            JFileChooser saveFileChooser = new JFileChooser();
+            saveFileChooser.setDialogTitle("Save Processed Image");
+            saveFileChooser.setSelectedFile(new File(path + (mode == 0 ? "_black_white_output.jpg" : "_grayscale_output.jpg")));
+
+            int saveReturnValue = saveFileChooser.showSaveDialog(null);
+            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
+                File outputFile = saveFileChooser.getSelectedFile();
+                ImageIO.write(outputImage, "jpg", outputFile);
+                JOptionPane.showMessageDialog(null, "Image saved successfully: " + outputFile.getAbsolutePath());
+            }
+
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e);
             throw new RuntimeException(e);
         }
     }
+
     private static void processImage(BufferedImage inputImage, BufferedImage outputImage, int mode) {
         int width = inputImage.getWidth();
         int height = inputImage.getHeight();
