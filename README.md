@@ -8,7 +8,7 @@ A software tool that converts JPG/PNG images into black and white or greyscale.
 - Fast and lightweight image processing.
 
 ## Author
-- [**Mohamed E. Monem**](https://github.com/MohamedEMonem)
+- [**Mohamed Essam Abd El-Monem**](https://github.com/MohamedEMonem)
 
 ## Lessons Learned
 While building this project, I gained valuable insights and overcame a variety of challenges:
