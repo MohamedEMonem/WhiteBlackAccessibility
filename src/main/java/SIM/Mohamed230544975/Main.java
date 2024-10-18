@@ -14,11 +14,41 @@ public class Main {
         // Create the main application window (JFrame)
         JFrame mainFrame = new JFrame("Image Processing Application");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Ensure the app closes properly
-        mainFrame.setSize(400, 300);
+        mainFrame.setSize(400, 200); // Set a reasonable frame size to accommodate both labels
         mainFrame.setLocationRelativeTo(null); // Center the frame
         mainFrame.setAlwaysOnTop(true); // Make the main frame always on top
 
+        // Create a panel for title and author
+        JPanel titlePanel = getTitlePanel();
+
         // Add Start, Compression, and Exit buttons
+        JPanel buttonPanel = getPanel(mainFrame);
+
+        // Add title panel and button panel to the main frame
+        mainFrame.setLayout(new BorderLayout()); // Use BorderLayout for the main frame
+        mainFrame.add(titlePanel, BorderLayout.NORTH); // Add title panel at the top
+        mainFrame.add(buttonPanel, BorderLayout.CENTER); // Add button panel in the center
+
+        mainFrame.setVisible(true); // Show the main frame
+    }
+
+    private static JPanel getTitlePanel() {
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new GridLayout(2, 1)); // Use GridLayout for two rows
+
+        // Create labels for title and author
+        JLabel titleLabel = new JLabel("WhiteBlackAccessibility", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set title font size and style
+        JLabel authorLabel = new JLabel("Author: Mohamed Essam Abd El Monem", SwingConstants.CENTER);
+        authorLabel.setFont(new Font("Arial", Font.PLAIN, 14)); // Set author font size and style
+
+        // Add labels to the title panel
+        titlePanel.add(titleLabel);
+        titlePanel.add(authorLabel);
+        return titlePanel;
+    }
+
+    private static JPanel getPanel(JFrame mainFrame) {
         JPanel buttonPanel = new JPanel();
         JButton startButton = new JButton("Start");
         JButton compressionButton = new JButton("Compress");
@@ -31,10 +61,9 @@ public class Main {
         buttonPanel.add(startButton);
         buttonPanel.add(compressionButton);
         buttonPanel.add(exitButton);
-
-        mainFrame.add(buttonPanel);
-        mainFrame.setVisible(true);
+        return buttonPanel;
     }
+
 
     private static void openFileChooser(JFrame mainFrame, boolean isCompression) {
         JFileChooser fileChooser = new JFileChooser();
@@ -156,6 +185,7 @@ public class Main {
             File outputFile = new File(saveFolder, "compressed_" + fileName);
             ImageIO.write(originalImage, fileExtension, outputFile);
         } catch (IOException e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
@@ -225,8 +255,8 @@ public class Main {
             BufferedImage originalImage = ImageIO.read(new File(imagePath));
 
             // Process the image according to the selected mode
-            BufferedImage processedImage = null;
-            String optionName = ""; // This will hold the option name for the output file
+            BufferedImage processedImage;
+            String optionName; // This will hold the option name for the output file
 
             switch (mode) {
                 case 0: // Grayscale
@@ -255,6 +285,7 @@ public class Main {
             ImageIO.write(processedImage, "png", new File(outputFilePath));
 
         } catch (IOException e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
