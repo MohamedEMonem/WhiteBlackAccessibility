@@ -290,23 +290,24 @@ public class Main {
     }
 
     private static BufferedImage convertToGrayscale(BufferedImage originalImage) {
-        BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-        Graphics g = grayscaleImage.getGraphics();
-        g.drawImage(originalImage, 0, 0, null);
-        g.dispose();
-        return grayscaleImage;
+        return getBufferedImage(originalImage);
     }
 
-    private static BufferedImage convertToBlackAndWhite(BufferedImage originalImage) {
-        BufferedImage bwImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+    private static BufferedImage getBufferedImage(BufferedImage originalImage) {
+        BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
         for (int x = 0; x < originalImage.getWidth(); x++) {
             for (int y = 0; y < originalImage.getHeight(); y++) {
                 Color c = new Color(originalImage.getRGB(x, y));
                 int gray = (c.getRed() + c.getGreen() + c.getBlue()) / 3;
-                bwImage.setRGB(x, y, new Color(gray, gray, gray).getRGB());
+                grayscaleImage.setRGB(x, y, new Color(gray, gray, gray).getRGB());
             }
         }
-        return bwImage;
+        return grayscaleImage;
+    }
+
+
+    private static BufferedImage convertToBlackAndWhite(BufferedImage originalImage) {
+        return getBufferedImage(originalImage);
     }
 
     private static BufferedImage invertColors(BufferedImage originalImage) {
