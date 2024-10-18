@@ -18,22 +18,25 @@ public class Main {
         mainFrame.setLocationRelativeTo(null); // Center the frame
         mainFrame.setAlwaysOnTop(true); // Make the main frame always on top
 
-        // Add Start and Exit buttons
+        // Add Start, Compression, and Exit buttons
         JPanel buttonPanel = new JPanel();
         JButton startButton = new JButton("Start");
+        JButton compressionButton = new JButton("Compress");
         JButton exitButton = new JButton("Exit");
 
-        startButton.addActionListener(e -> openFileChooser(mainFrame));
+        startButton.addActionListener(e -> openFileChooser(mainFrame, false));
+        compressionButton.addActionListener(e -> openFileChooser(mainFrame, true));
         exitButton.addActionListener(e -> System.exit(0)); // Exit the entire program
 
         buttonPanel.add(startButton);
+        buttonPanel.add(compressionButton);
         buttonPanel.add(exitButton);
 
         mainFrame.add(buttonPanel);
         mainFrame.setVisible(true);
     }
 
-    private static void openFileChooser(JFrame mainFrame) {
+    private static void openFileChooser(JFrame mainFrame, boolean isCompression) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Select Image Files");
         fileChooser.setMultiSelectionEnabled(true);
@@ -79,7 +82,11 @@ public class Main {
 
             okButton.addActionListener(e -> {
                 optionsFrame.dispose(); // Close options frame
-                processSelectedFiles(selectedFiles, grayscaleCheckbox, blackAndWhiteCheckbox, invertCheckbox, bwInvertCheckbox, mainFrame);
+                if (isCompression) {
+                    compressSelectedFiles(selectedFiles, mainFrame);
+                } else {
+                    processSelectedFiles(selectedFiles, grayscaleCheckbox, blackAndWhiteCheckbox, invertCheckbox, bwInvertCheckbox, mainFrame);
+                }
             });
 
             cancelButton.addActionListener(e -> {
@@ -90,6 +97,66 @@ public class Main {
             buttonPanel.add(cancelButton);
             optionsFrame.add(buttonPanel, BorderLayout.SOUTH);
             optionsFrame.setVisible(true); // Show the options frame
+        }
+    }
+
+    private static void compressSelectedFiles(File[] selectedFiles, JFrame mainFrame) {
+        // Ask for a folder to save the compressed images
+        JFileChooser folderChooser = new JFileChooser();
+        folderChooser.setDialogTitle("Select Folder to Save Compressed Images");
+        folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int folderReturnValue = folderChooser.showSaveDialog(mainFrame);
+
+        if (folderReturnValue == JFileChooser.APPROVE_OPTION) {
+            File saveFolder = folderChooser.getSelectedFile();
+
+            // Create a new JFrame for progress indication
+            JFrame progressFrame = new JFrame("Processing");
+            progressFrame.setAlwaysOnTop(true);
+            progressFrame.setSize(300, 100);
+            progressFrame.setLocationRelativeTo(mainFrame);
+            progressFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            JLabel progressLabel = new JLabel("Compressing images, please wait...");
+            progressFrame.add(progressLabel);
+            progressFrame.setVisible(true); // Show the progress frame
+
+            // Create and start the SwingWorker
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    for (File file : selectedFiles) {
+                        compressImage(file, saveFolder);
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    SwingUtilities.invokeLater(() -> {
+                        // Close the progress frame
+                        progressFrame.dispose();
+
+                        // Show a success message and return to the main frame
+                        JOptionPane.showMessageDialog(mainFrame, "Image compression completed successfully!");
+                    });
+                }
+            };
+            worker.execute(); // Start the worker
+        }
+    }
+
+    private static void compressImage(File imageFile, File saveFolder) {
+        try {
+            BufferedImage originalImage = ImageIO.read(imageFile);
+            String fileName = imageFile.getName();
+            String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1); // Get the file extension
+
+            // Save a compressed version of the image (e.g., reduce quality)
+            File outputFile = new File(saveFolder, "compressed_" + fileName);
+            ImageIO.write(originalImage, fileExtension, outputFile);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -178,65 +245,47 @@ public class Main {
                     processedImage = invertColors(convertToBlackAndWhite(originalImage));
                     optionName = "BW_Invert";
                     break;
+                default:
+                    throw new IllegalArgumentException("Invalid mode: " + mode);
             }
 
-            // Save the processed image with the option name in the filename
+            // Save the processed image to the specified folder
             String fileName = new File(imagePath).getName();
-            String fileBaseName = fileName.substring(0, fileName.lastIndexOf('.')); // Get the name without extension
-            String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1); // Get the file extension
-            String outputFileName = fileBaseName + "_" + optionName + "_Output." + fileExtension;
+            String outputFilePath = saveFolder + File.separator + optionName + "_" + fileName;
+            ImageIO.write(processedImage, "png", new File(outputFilePath));
 
-            // Save the file in the selected folder
-            File outputFile = new File(saveFolder, outputFileName);
-            if (processedImage != null) {
-                ImageIO.write(processedImage, fileExtension, outputFile);
-            }
         } catch (IOException e) {
-            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
 
     private static BufferedImage convertToGrayscale(BufferedImage originalImage) {
-        BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(),
-                originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-        for (int x = 0; x < originalImage.getWidth(); x++) {
-            for (int y = 0; y < originalImage.getHeight(); y++) {
-                int rgb = originalImage.getRGB(x, y);
-                grayscaleImage.setRGB(x, y, rgb);
-            }
-        }
+        BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = grayscaleImage.getGraphics();
+        g.drawImage(originalImage, 0, 0, null);
+        g.dispose();
         return grayscaleImage;
     }
 
     private static BufferedImage convertToBlackAndWhite(BufferedImage originalImage) {
-        BufferedImage bwImage = new BufferedImage(originalImage.getWidth(),
-                originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        BufferedImage bwImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
         for (int x = 0; x < originalImage.getWidth(); x++) {
             for (int y = 0; y < originalImage.getHeight(); y++) {
-                int rgb = originalImage.getRGB(x, y);
-                int grayValue = (rgb >> 16) & 0xff;
-                if (grayValue > 127) {
-                    bwImage.setRGB(x, y, 0xFFFFFFFF); // White
-                } else {
-                    bwImage.setRGB(x, y, 0xFF000000); // Black
-                }
+                Color c = new Color(originalImage.getRGB(x, y));
+                int gray = (c.getRed() + c.getGreen() + c.getBlue()) / 3;
+                bwImage.setRGB(x, y, new Color(gray, gray, gray).getRGB());
             }
         }
         return bwImage;
     }
 
     private static BufferedImage invertColors(BufferedImage originalImage) {
-        BufferedImage invertedImage = new BufferedImage(originalImage.getWidth(),
-                originalImage.getHeight(), originalImage.getType());
+        BufferedImage invertedImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), originalImage.getType());
         for (int x = 0; x < originalImage.getWidth(); x++) {
             for (int y = 0; y < originalImage.getHeight(); y++) {
-                int rgb = originalImage.getRGB(x, y);
-                int red = 255 - ((rgb >> 16) & 0xff);
-                int green = 255 - ((rgb >> 8) & 0xff);
-                int blue = 255 - (rgb & 0xff);
-                int invertedRGB = (red << 16) | (green << 8) | blue;
-                invertedImage.setRGB(x, y, invertedRGB);
+                Color c = new Color(originalImage.getRGB(x, y));
+                Color invertedColor = new Color(255 - c.getRed(), 255 - c.getGreen(), 255 - c.getBlue());
+                invertedImage.setRGB(x, y, invertedColor.getRGB());
             }
         }
         return invertedImage;
