@@ -164,33 +164,43 @@ public class Main {
 
             // Process the image according to the selected mode
             BufferedImage processedImage = null;
+            String optionName = ""; // This will hold the option name for the output file
 
             switch (mode) {
                 case 0: // Grayscale
                     processedImage = convertToGrayscale(originalImage);
+                    optionName = "Grayscale";
                     break;
                 case 1: // Black and White
                     processedImage = convertToBlackAndWhite(originalImage);
+                    optionName = "BlackAndWhite";
                     break;
                 case 2: // Invert
                     processedImage = invertColors(originalImage);
+                    optionName = "Invert";
                     break;
                 case 3: // Black-and-White + Invert
                     processedImage = invertColors(convertToBlackAndWhite(originalImage));
+                    optionName = "BW_Invert";
                     break;
             }
 
-            // Save the processed image
+            // Save the processed image with the option name in the filename
             String fileName = new File(imagePath).getName();
-            String outputFilePath = new File(saveFolder, "processed_" + fileName).getAbsolutePath();
+            String fileBaseName = fileName.substring(0, fileName.lastIndexOf('.')); // Get the name without extension
+            String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1); // Get the file extension
+            String outputFileName = fileBaseName + "_" + optionName + "_Output." + fileExtension;
+
+            // Save the file in the selected folder
+            File outputFile = new File(saveFolder, outputFileName);
             if (processedImage != null) {
-                ImageIO.write(processedImage, "png", new File(outputFilePath));
+                ImageIO.write(processedImage, fileExtension, outputFile);
             }
         } catch (IOException e) {
-            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
+
 
     private static BufferedImage convertToGrayscale(BufferedImage originalImage) {
         BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(),
