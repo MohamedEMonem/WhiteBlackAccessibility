@@ -4,8 +4,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -185,8 +183,11 @@ public class Main {
             // Save the processed image
             String fileName = new File(imagePath).getName();
             String outputFilePath = new File(saveFolder, "processed_" + fileName).getAbsolutePath();
-            ImageIO.write(processedImage, "png", new File(outputFilePath));
+            if (processedImage != null) {
+                ImageIO.write(processedImage, "png", new File(outputFilePath));
+            }
         } catch (IOException e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
