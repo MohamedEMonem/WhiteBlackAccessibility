@@ -11,7 +11,6 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) {
-        // Create the main application window (JFrame)
         JFrame mainFrame = new JFrame("Image Processing Application");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Ensure the app closes properly
         mainFrame.setSize(400, 200); // Set a reasonable frame size to accommodate both labels
