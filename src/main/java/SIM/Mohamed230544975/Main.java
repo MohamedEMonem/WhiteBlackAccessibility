@@ -35,12 +35,24 @@ public class Main {
             String imagePath = selectedFile.getAbsolutePath();
 
             if (imagePath.toLowerCase().endsWith(".jpg") || imagePath.toLowerCase().endsWith(".png")) {
-                String[] options = {"Grayscale", "Black and White", "Invert", "Black-and-White + Invert"};
-                int mode = JOptionPane.showOptionDialog(mainFrame, "Choose the image processing mode:",
-                        "Image Processing Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
-                        null, options, options[0]);
 
-                if (mode != JOptionPane.CLOSED_OPTION) {
+                // Replace the single-choice option dialog with checkboxes
+                JCheckBox grayscaleCheckbox = new JCheckBox("Grayscale");
+                JCheckBox blackAndWhiteCheckbox = new JCheckBox("Black and White");
+                JCheckBox invertCheckbox = new JCheckBox("Invert");
+                JCheckBox bwInvertCheckbox = new JCheckBox("Black-and-White + Invert");
+
+                JPanel checkboxPanel = new JPanel(new GridLayout(0, 1));
+                checkboxPanel.add(grayscaleCheckbox);
+                checkboxPanel.add(blackAndWhiteCheckbox);
+                checkboxPanel.add(invertCheckbox);
+                checkboxPanel.add(bwInvertCheckbox);
+
+                // Show the checkbox panel in a dialog
+                int result = JOptionPane.showConfirmDialog(mainFrame, checkboxPanel, "Select Image Processing Modes",
+                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+
+                if (result == JOptionPane.OK_OPTION) {
                     new Thread(() -> {
                         JDialog processingDialog = createProcessingDialog(mainFrame);
                         processingDialog.setVisible(true);
@@ -49,7 +61,19 @@ public class Main {
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() {
-                            convertImage(imagePath, mode); // Call the conversion method
+                            // Process each selected mode
+                            if (grayscaleCheckbox.isSelected()) {
+                                convertImage(imagePath, 0); // Grayscale
+                            }
+                            if (blackAndWhiteCheckbox.isSelected()) {
+                                convertImage(imagePath, 1); // Black and White
+                            }
+                            if (invertCheckbox.isSelected()) {
+                                convertImage(imagePath, 2); // Invert
+                            }
+                            if (bwInvertCheckbox.isSelected()) {
+                                convertImage(imagePath, 3); // Black-and-White + Invert
+                            }
                             return null;
                         }
 
@@ -87,7 +111,23 @@ public class Main {
             // Define output file path with user selection for saving
             JFileChooser saveFileChooser = new JFileChooser();
             saveFileChooser.setDialogTitle("Save Processed Image");
-            saveFileChooser.setSelectedFile(new File(path + "_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+            switch (mode) {
+                case 0:
+                    saveFileChooser.setSelectedFile(new File(path + "_Grayscale_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    break;
+                case 1:
+                    saveFileChooser.setSelectedFile(new File(path + "_BK&W_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    break;
+                case 2:
+                    saveFileChooser.setSelectedFile(new File(path + "_Inverted-colors_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    break;
+                case 3:
+                    saveFileChooser.setSelectedFile(new File(path + "_BKW&inverted_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid mode: " + mode);
+
+            }
 
             int saveReturnValue = saveFileChooser.showSaveDialog(null);
             if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
