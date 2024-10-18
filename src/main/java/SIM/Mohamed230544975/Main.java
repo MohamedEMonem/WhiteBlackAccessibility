@@ -11,16 +11,10 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) {
-        // Create the main application window (JFrame)
-        JFrame mainFrame = new JFrame("Image Processing Application");
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Ensure the app closes properly
-        mainFrame.setSize(400, 300);
-        mainFrame.setLocationRelativeTo(null); // Center the frame
-        mainFrame.setVisible(true);
-
         // Create a Swing UI to choose the image file
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select an Image File");
+        fileChooser.setDialogTitle("Select Image Files");
+        fileChooser.setMultiSelectionEnabled(true);  // Enable multiple selection
 
         // Restrict file chooser to JPG and PNG files only
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG & PNG Images", "jpg", "png");
@@ -28,51 +22,64 @@ public class Main {
         fileChooser.setAcceptAllFileFilterUsed(false);
 
         // Open file chooser dialog
-        int returnValue = fileChooser.showOpenDialog(mainFrame);
+        int returnValue = fileChooser.showOpenDialog(null); // Pass null to use the default parent window
 
         if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            String imagePath = selectedFile.getAbsolutePath();
+            File[] selectedFiles = fileChooser.getSelectedFiles();  // Get multiple files
 
-            if (imagePath.toLowerCase().endsWith(".jpg") || imagePath.toLowerCase().endsWith(".png")) {
+            // Replace the single-choice option dialog with checkboxes
+            JCheckBox grayscaleCheckbox = new JCheckBox("Grayscale");
+            JCheckBox blackAndWhiteCheckbox = new JCheckBox("Black and White");
+            JCheckBox invertCheckbox = new JCheckBox("Invert");
+            JCheckBox bwInvertCheckbox = new JCheckBox("Black-and-White + Invert");
 
-                // Replace the single-choice option dialog with checkboxes
-                JCheckBox grayscaleCheckbox = new JCheckBox("Grayscale");
-                JCheckBox blackAndWhiteCheckbox = new JCheckBox("Black and White");
-                JCheckBox invertCheckbox = new JCheckBox("Invert");
-                JCheckBox bwInvertCheckbox = new JCheckBox("Black-and-White + Invert");
+            JPanel checkboxPanel = new JPanel(new GridLayout(0, 1));
+            checkboxPanel.add(grayscaleCheckbox);
+            checkboxPanel.add(blackAndWhiteCheckbox);
+            checkboxPanel.add(invertCheckbox);
+            checkboxPanel.add(bwInvertCheckbox);
 
-                JPanel checkboxPanel = new JPanel(new GridLayout(0, 1));
-                checkboxPanel.add(grayscaleCheckbox);
-                checkboxPanel.add(blackAndWhiteCheckbox);
-                checkboxPanel.add(invertCheckbox);
-                checkboxPanel.add(bwInvertCheckbox);
+            // Show the checkbox panel in a dialog
+            int result = JOptionPane.showConfirmDialog(null, checkboxPanel, "Select Image Processing Modes",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
-                // Show the checkbox panel in a dialog
-                int result = JOptionPane.showConfirmDialog(mainFrame, checkboxPanel, "Select Image Processing Modes",
-                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            if (result == JOptionPane.OK_OPTION) {
+                // Ask for a folder to save the processed images
+                JFileChooser folderChooser = new JFileChooser();
+                folderChooser.setDialogTitle("Select Folder to Save Processed Images");
+                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int folderReturnValue = folderChooser.showSaveDialog(null);
 
-                if (result == JOptionPane.OK_OPTION) {
-                    new Thread(() -> {
-                        JDialog processingDialog = createProcessingDialog(mainFrame);
-                        processingDialog.setVisible(true);
-                    }).start();
+                if (folderReturnValue == JFileChooser.APPROVE_OPTION) {
+                    File saveFolder = folderChooser.getSelectedFile();
 
-                    new SwingWorker<Void, Void>() {
+                    // Show a progress dialog during processing
+                    JDialog progressDialog = new JDialog();
+                    JLabel progressLabel = new JLabel("Processing images, please wait...");
+                    progressDialog.add(progressLabel);
+                    progressDialog.setSize(300, 100);
+                    progressDialog.setLocationRelativeTo(null); // Center the dialog
+                    progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE); // Prevent closing
+
+                    // Create and start the SwingWorker
+                    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() {
-                            // Process each selected mode
-                            if (grayscaleCheckbox.isSelected()) {
-                                convertImage(imagePath, 0); // Grayscale
-                            }
-                            if (blackAndWhiteCheckbox.isSelected()) {
-                                convertImage(imagePath, 1); // Black and White
-                            }
-                            if (invertCheckbox.isSelected()) {
-                                convertImage(imagePath, 2); // Invert
-                            }
-                            if (bwInvertCheckbox.isSelected()) {
-                                convertImage(imagePath, 3); // Black-and-White + Invert
+                            for (File file : selectedFiles) {
+                                String imagePath = file.getAbsolutePath();
+
+                                if (grayscaleCheckbox.isSelected()) {
+                                    processAndSaveImage(imagePath, 0, saveFolder); // Grayscale
+                                }
+                                if (blackAndWhiteCheckbox.isSelected()) {
+                                    processAndSaveImage(imagePath, 1, saveFolder); // Black and White
+                                }
+                                if (invertCheckbox.isSelected()) {
+                                    processAndSaveImage(imagePath, 2, saveFolder); // Invert
+                                }
+                                if (bwInvertCheckbox.isSelected()) {
+                                    processAndSaveImage(imagePath, 3, saveFolder); // Black-and-White + Invert
+                                }
                             }
                             return null;
                         }
@@ -80,64 +87,60 @@ public class Main {
                         @Override
                         protected void done() {
                             SwingUtilities.invokeLater(() -> {
-                                for (Window window : Window.getWindows()) {
-                                    if (window instanceof JDialog && window.isVisible()) {
-                                        window.dispose(); // Close processing dialog
-                                        mainFrame.dispose();
-                                    }
-                                }
+                                // Close the progress dialog
+                                progressDialog.dispose();
+
+                                // Show a success message
+                                JOptionPane.showMessageDialog(null, "Image processing completed successfully!");
                             });
                         }
-                    }.execute(); // Start the SwingWorker
+                    };
+
+                    // Show the progress dialog before starting the worker
+                    SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
+
+                    worker.execute(); // Start the SwingWorker
                 }
-            } else {
-                JOptionPane.showMessageDialog(mainFrame, "Please select a JPG or PNG file.", "Invalid File", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    public static void convertImage(String path, int mode) {
-        File file = new File(path);
+    public static void processAndSaveImage(String imagePath, int mode, File saveFolder) {
+        File file = new File(imagePath);
         try {
             BufferedImage inputImage = ImageIO.read(file);
             BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(), BufferedImage.TYPE_INT_RGB);
 
-            if (mode >= 0 && mode <= 3) {
-                processImage(inputImage, outputImage, mode);
-            } else {
-                throw new IllegalArgumentException("Invalid mode. Use 0 for Grayscale, 1 for Black-and-White, 2 for Invert, 3 for Black-and-White + Invert.");
-            }
+            processImage(inputImage, outputImage, mode);
 
-            // Define output file path with user selection for saving
-            JFileChooser saveFileChooser = new JFileChooser();
-            saveFileChooser.setDialogTitle("Save Processed Image");
+            // Generate the output file path
+            String suffix;
             switch (mode) {
                 case 0:
-                    saveFileChooser.setSelectedFile(new File(path + "_Grayscale_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    suffix = "_Grayscale";
                     break;
                 case 1:
-                    saveFileChooser.setSelectedFile(new File(path + "_BK&W_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    suffix = "_BK&W";
                     break;
                 case 2:
-                    saveFileChooser.setSelectedFile(new File(path + "_Inverted-colors_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    suffix = "_Inverted";
                     break;
                 case 3:
-                    saveFileChooser.setSelectedFile(new File(path + "_BKW&inverted_output." + path.substring(path.lastIndexOf('.') + 1).toLowerCase()));
+                    suffix = "_BKW_Inverted";
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid mode: " + mode);
-
             }
 
-            int saveReturnValue = saveFileChooser.showSaveDialog(null);
-            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
-                File outputFile = saveFileChooser.getSelectedFile();
-                ImageIO.write(outputImage, "jpg", outputFile);
-                JOptionPane.showMessageDialog(null, "Image saved successfully: " + outputFile.getAbsolutePath());
-            }
+            String fileName = file.getName();
+            String newFileName = fileName.substring(0, fileName.lastIndexOf('.')) + suffix + ".jpg";
+            File outputFile = new File(saveFolder, newFileName);
+
+            // Save the image
+            ImageIO.write(outputImage, "jpg", outputFile);
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error reading or writing the image file: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error processing the image: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -184,16 +187,5 @@ public class Main {
                 }
             }
         }
-    }
-
-    private static JDialog createProcessingDialog(JFrame parentFrame) {
-        JDialog dialog = new JDialog(parentFrame, "Processing Image...", true);
-        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-        dialog.setSize(300, 100);
-        dialog.setLocationRelativeTo(parentFrame);
-
-        JLabel label = new JLabel("Processing... Please wait.", SwingConstants.CENTER);
-        dialog.add(label);
-        return dialog;
     }
 }
