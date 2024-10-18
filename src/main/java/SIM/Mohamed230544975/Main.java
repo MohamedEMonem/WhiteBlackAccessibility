@@ -197,6 +197,7 @@ public class Main {
                 ImageIO.write(processedImage, fileExtension, outputFile);
             }
         } catch (IOException e) {
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
