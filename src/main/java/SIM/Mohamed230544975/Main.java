@@ -4,6 +4,8 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -11,10 +13,22 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) {
-        // Create a Swing UI to choose the image file
+        // Create the main application window (JFrame)
+        JFrame mainFrame = new JFrame("Image Processing Application");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Ensure the app closes properly
+        mainFrame.setSize(400, 300);
+        mainFrame.setLocationRelativeTo(null); // Center the frame
+        mainFrame.setAlwaysOnTop(true); // Make the main frame always on top
+        mainFrame.setVisible(true);
+
+        // Open file chooser for the first time
+        openFileChooser(mainFrame);
+    }
+
+    private static void openFileChooser(JFrame mainFrame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Select Image Files");
-        fileChooser.setMultiSelectionEnabled(true);  // Enable multiple selection
+        fileChooser.setMultiSelectionEnabled(true);
 
         // Restrict file chooser to JPG and PNG files only
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG & PNG Images", "jpg", "png");
@@ -22,7 +36,7 @@ public class Main {
         fileChooser.setAcceptAllFileFilterUsed(false);
 
         // Open file chooser dialog
-        int returnValue = fileChooser.showOpenDialog(null); // Pass null to use the default parent window
+        int returnValue = fileChooser.showOpenDialog(mainFrame);
 
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File[] selectedFiles = fileChooser.getSelectedFiles();  // Get multiple files
@@ -39,153 +53,183 @@ public class Main {
             checkboxPanel.add(invertCheckbox);
             checkboxPanel.add(bwInvertCheckbox);
 
-            // Show the checkbox panel in a dialog
-            int result = JOptionPane.showConfirmDialog(null, checkboxPanel, "Select Image Processing Modes",
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            // Create a new JFrame to replace the dialog
+            JFrame optionsFrame = new JFrame("Select Image Processing Modes");
+            optionsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            optionsFrame.setSize(300, 200);
+            optionsFrame.setLocationRelativeTo(mainFrame); // Center the frame
+            optionsFrame.setAlwaysOnTop(true); // Make the options frame always on top
+            optionsFrame.setLayout(new BorderLayout());
 
-            if (result == JOptionPane.OK_OPTION) {
-                // Ask for a folder to save the processed images
-                JFileChooser folderChooser = new JFileChooser();
-                folderChooser.setDialogTitle("Select Folder to Save Processed Images");
-                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                int folderReturnValue = folderChooser.showSaveDialog(null);
+            // Add checkbox panel to options frame
+            optionsFrame.add(checkboxPanel, BorderLayout.CENTER);
 
-                if (folderReturnValue == JFileChooser.APPROVE_OPTION) {
-                    File saveFolder = folderChooser.getSelectedFile();
+            // Add OK and Cancel buttons
+            JPanel buttonPanel = new JPanel();
+            JButton okButton = new JButton("OK");
+            JButton cancelButton = new JButton("Cancel");
 
-                    // Show a progress dialog during processing
-                    JDialog progressDialog = new JDialog();
-                    JLabel progressLabel = new JLabel("Processing images, please wait...");
-                    progressDialog.add(progressLabel);
-                    progressDialog.setSize(300, 100);
-                    progressDialog.setLocationRelativeTo(null); // Center the dialog
-                    progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE); // Prevent closing
+            okButton.addActionListener(e -> {
+                optionsFrame.dispose(); // Close options frame
+                processSelectedFiles(selectedFiles, grayscaleCheckbox, blackAndWhiteCheckbox, invertCheckbox, bwInvertCheckbox, mainFrame);
+            });
 
-                    // Create and start the SwingWorker
-                    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                        @Override
-                        protected Void doInBackground() {
-                            for (File file : selectedFiles) {
-                                String imagePath = file.getAbsolutePath();
+            cancelButton.addActionListener(e -> {
+                optionsFrame.dispose(); // Close options frame
+            });
 
-                                if (grayscaleCheckbox.isSelected()) {
-                                    processAndSaveImage(imagePath, 0, saveFolder); // Grayscale
-                                }
-                                if (blackAndWhiteCheckbox.isSelected()) {
-                                    processAndSaveImage(imagePath, 1, saveFolder); // Black and White
-                                }
-                                if (invertCheckbox.isSelected()) {
-                                    processAndSaveImage(imagePath, 2, saveFolder); // Invert
-                                }
-                                if (bwInvertCheckbox.isSelected()) {
-                                    processAndSaveImage(imagePath, 3, saveFolder); // Black-and-White + Invert
-                                }
-                            }
-                            return null;
-                        }
-
-                        @Override
-                        protected void done() {
-                            SwingUtilities.invokeLater(() -> {
-                                // Close the progress dialog
-                                progressDialog.dispose();
-
-                                // Show a success message
-                                JOptionPane.showMessageDialog(null, "Image processing completed successfully!");
-                            });
-                        }
-                    };
-
-                    // Show the progress dialog before starting the worker
-                    SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
-
-                    worker.execute(); // Start the SwingWorker
-                }
-            }
+            buttonPanel.add(okButton);
+            buttonPanel.add(cancelButton);
+            optionsFrame.add(buttonPanel, BorderLayout.SOUTH);
+            optionsFrame.setVisible(true); // Show the options frame
         }
     }
 
-    public static void processAndSaveImage(String imagePath, int mode, File saveFolder) {
-        File file = new File(imagePath);
+    private static void processSelectedFiles(File[] selectedFiles, JCheckBox grayscaleCheckbox, JCheckBox blackAndWhiteCheckbox,
+                                             JCheckBox invertCheckbox, JCheckBox bwInvertCheckbox, JFrame mainFrame) {
+        // Ask for a folder to save the processed images
+        JFileChooser folderChooser = new JFileChooser();
+        folderChooser.setDialogTitle("Select Folder to Save Processed Images");
+        folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int folderReturnValue = folderChooser.showSaveDialog(mainFrame);
+
+        if (folderReturnValue == JFileChooser.APPROVE_OPTION) {
+            File saveFolder = folderChooser.getSelectedFile();
+
+            // Create a new JFrame for progress indication
+            JFrame progressFrame = new JFrame("Processing");
+            progressFrame.setAlwaysOnTop(true);
+            progressFrame.setSize(300, 100);
+            progressFrame.setLocationRelativeTo(mainFrame);
+            progressFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            JLabel progressLabel = new JLabel("Processing images, please wait...");
+            progressFrame.add(progressLabel);
+            progressFrame.setVisible(true); // Show the progress frame
+
+            // Create and start the SwingWorker
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    for (File file : selectedFiles) {
+                        String imagePath = file.getAbsolutePath();
+
+                        if (grayscaleCheckbox.isSelected()) {
+                            processAndSaveImage(imagePath, 0, saveFolder); // Grayscale
+                        }
+                        if (blackAndWhiteCheckbox.isSelected()) {
+                            processAndSaveImage(imagePath, 1, saveFolder); // Black and White
+                        }
+                        if (invertCheckbox.isSelected()) {
+                            processAndSaveImage(imagePath, 2, saveFolder); // Invert
+                        }
+                        if (bwInvertCheckbox.isSelected()) {
+                            processAndSaveImage(imagePath, 3, saveFolder); // Black-and-White + Invert
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    SwingUtilities.invokeLater(() -> {
+                        // Close the progress frame
+                        progressFrame.dispose();
+
+                        // Show a success message
+                        JOptionPane.showMessageDialog(mainFrame, "Image processing completed successfully!");
+
+                        // Ask user if they want to process more images
+                        int response = JOptionPane.showConfirmDialog(mainFrame,
+                                "Do you want to process more images?",
+                                "Continue Processing",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.QUESTION_MESSAGE);
+
+                        if (response == JOptionPane.YES_OPTION) {
+                            // If user wants to process more images, reopen file chooser
+                            openFileChooser(mainFrame);  // Call a method to handle file selection again
+                        } else {
+                            // If user chooses no, exit the application
+                            System.exit(0);
+                        }
+                    });
+                }
+            };
+            worker.execute(); // Start the worker
+        }
+    }
+
+    private static void processAndSaveImage(String imagePath, int mode, File saveFolder) {
         try {
-            BufferedImage inputImage = ImageIO.read(file);
-            BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
 
-            processImage(inputImage, outputImage, mode);
+            // Process the image according to the selected mode
+            BufferedImage processedImage = null;
 
-            // Generate the output file path
-            String suffix;
             switch (mode) {
-                case 0:
-                    suffix = "_Grayscale";
+                case 0: // Grayscale
+                    processedImage = convertToGrayscale(originalImage);
                     break;
-                case 1:
-                    suffix = "_BK&W";
+                case 1: // Black and White
+                    processedImage = convertToBlackAndWhite(originalImage);
                     break;
-                case 2:
-                    suffix = "_Inverted";
+                case 2: // Invert
+                    processedImage = invertColors(originalImage);
                     break;
-                case 3:
-                    suffix = "_BKW_Inverted";
+                case 3: // Black-and-White + Invert
+                    processedImage = invertColors(convertToBlackAndWhite(originalImage));
                     break;
-                default:
-                    throw new IllegalArgumentException("Invalid mode: " + mode);
             }
 
-            String fileName = file.getName();
-            String newFileName = fileName.substring(0, fileName.lastIndexOf('.')) + suffix + ".jpg";
-            File outputFile = new File(saveFolder, newFileName);
-
-            // Save the image
-            ImageIO.write(outputImage, "jpg", outputFile);
-
+            // Save the processed image
+            String fileName = new File(imagePath).getName();
+            String outputFilePath = new File(saveFolder, "processed_" + fileName).getAbsolutePath();
+            ImageIO.write(processedImage, "png", new File(outputFilePath));
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error processing the image: " + e.getMessage());
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
-    private static void processImage(BufferedImage inputImage, BufferedImage outputImage, int mode) {
-        int width = inputImage.getWidth();
-        int height = inputImage.getHeight();
-        int threshold = 128;
+    private static BufferedImage convertToGrayscale(BufferedImage originalImage) {
+        BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(),
+                originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        for (int x = 0; x < originalImage.getWidth(); x++) {
+            for (int y = 0; y < originalImage.getHeight(); y++) {
+                int rgb = originalImage.getRGB(x, y);
+                grayscaleImage.setRGB(x, y, rgb);
+            }
+        }
+        return grayscaleImage;
+    }
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int pixelColor = inputImage.getRGB(x, y);
-
-                // Extract color components
-                Color color = new Color(pixelColor);
-                int red = color.getRed();
-                int green = color.getGreen();
-                int blue = color.getBlue();
-
-                // Calculate grayscale value (luminance)
-                int grayValue = (red + green + blue) / 3;
-
-                switch (mode) {
-                    case 0:
-                        // Grayscale
-                        Color grayColor = new Color(grayValue, grayValue, grayValue);
-                        outputImage.setRGB(x, y, grayColor.getRGB());
-                        break;
-                    case 1:
-                        // Black and White
-                        outputImage.setRGB(x, y, grayValue >= threshold ? Color.WHITE.getRGB() : Color.BLACK.getRGB());
-                        break;
-                    case 2:
-                        // Invert colors
-                        Color invertedColor = new Color(255 - red, 255 - green, 255 - blue);
-                        outputImage.setRGB(x, y, invertedColor.getRGB());
-                        break;
-                    case 3:
-                        // Black and White + Invert
-                        outputImage.setRGB(x, y, grayValue >= threshold ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid mode: " + mode);
+    private static BufferedImage convertToBlackAndWhite(BufferedImage originalImage) {
+        BufferedImage bwImage = new BufferedImage(originalImage.getWidth(),
+                originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        for (int x = 0; x < originalImage.getWidth(); x++) {
+            for (int y = 0; y < originalImage.getHeight(); y++) {
+                int rgb = originalImage.getRGB(x, y);
+                int grayValue = (rgb >> 16) & 0xff;
+                if (grayValue > 127) {
+                    bwImage.setRGB(x, y, 0xFFFFFFFF); // White
+                } else {
+                    bwImage.setRGB(x, y, 0xFF000000); // Black
                 }
             }
         }
+        return bwImage;
+    }
+
+    private static BufferedImage invertColors(BufferedImage originalImage) {
+        BufferedImage invertedImage = new BufferedImage(originalImage.getWidth(),
+                originalImage.getHeight(), originalImage.getType());
+        for (int x = 0; x < originalImage.getWidth(); x++) {
+            for (int y = 0; y < originalImage.getHeight(); y++) {
+                int rgb = originalImage.getRGB(x, y);
+                int invertedRgb = (0xFFFFFF - rgb) | 0xFF000000; // Invert color
+                invertedImage.setRGB(x, y, invertedRgb);
+            }
+        }
+        return invertedImage;
     }
 }
