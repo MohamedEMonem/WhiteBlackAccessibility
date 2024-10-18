@@ -17,10 +17,20 @@ public class Main {
         mainFrame.setSize(400, 300);
         mainFrame.setLocationRelativeTo(null); // Center the frame
         mainFrame.setAlwaysOnTop(true); // Make the main frame always on top
-        mainFrame.setVisible(true);
 
-        // Open file chooser for the first time
-        openFileChooser(mainFrame);
+        // Add Start and Exit buttons
+        JPanel buttonPanel = new JPanel();
+        JButton startButton = new JButton("Start");
+        JButton exitButton = new JButton("Exit");
+
+        startButton.addActionListener(e -> openFileChooser(mainFrame));
+        exitButton.addActionListener(e -> System.exit(0)); // Exit the entire program
+
+        buttonPanel.add(startButton);
+        buttonPanel.add(exitButton);
+
+        mainFrame.add(buttonPanel);
+        mainFrame.setVisible(true);
     }
 
     private static void openFileChooser(JFrame mainFrame) {
@@ -134,23 +144,8 @@ public class Main {
                         // Close the progress frame
                         progressFrame.dispose();
 
-                        // Show a success message
+                        // Show a success message and return to the main frame
                         JOptionPane.showMessageDialog(mainFrame, "Image processing completed successfully!");
-
-                        // Ask user if they want to process more images
-                        int response = JOptionPane.showConfirmDialog(mainFrame,
-                                "Do you want to process more images?",
-                                "Continue Processing",
-                                JOptionPane.YES_NO_OPTION,
-                                JOptionPane.QUESTION_MESSAGE);
-
-                        if (response == JOptionPane.YES_OPTION) {
-                            // If user wants to process more images, reopen file chooser
-                            openFileChooser(mainFrame);  // Call a method to handle file selection again
-                        } else {
-                            // If user chooses no, exit the application
-                            System.exit(0);
-                        }
                     });
                 }
             };
@@ -202,7 +197,6 @@ public class Main {
         }
     }
 
-
     private static BufferedImage convertToGrayscale(BufferedImage originalImage) {
         BufferedImage grayscaleImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
@@ -238,8 +232,11 @@ public class Main {
         for (int x = 0; x < originalImage.getWidth(); x++) {
             for (int y = 0; y < originalImage.getHeight(); y++) {
                 int rgb = originalImage.getRGB(x, y);
-                int invertedRgb = (0xFFFFFF - rgb) | 0xFF000000; // Invert color
-                invertedImage.setRGB(x, y, invertedRgb);
+                int red = 255 - ((rgb >> 16) & 0xff);
+                int green = 255 - ((rgb >> 8) & 0xff);
+                int blue = 255 - (rgb & 0xff);
+                int invertedRGB = (red << 16) | (green << 8) | blue;
+                invertedImage.setRGB(x, y, invertedRGB);
             }
         }
         return invertedImage;
