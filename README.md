@@ -2,7 +2,7 @@
 
 A software tool that converts JPG/PNG images into black and white or greyscale.
 
-https://github.com/user-attachments/assets/23901c11-eb82-4920-9fa8-8cc63961256b
+https://github.com/user-attachments/assets/747697b3-7cea-4404-b65e-d55b56903526
 
 ## Features
 
@@ -18,7 +18,10 @@ https://github.com/user-attachments/assets/23901c11-eb82-4920-9fa8-8cc63961256b
 
 While building this project, I gained valuable insights and overcame a variety of challenges:
 
-1. **Reading Images**: Learned to read images using `BufferedImage` and `ImageIO` in Java.
+1. **Reading Images**: Learned to read images using 
+
+
+`BufferedImage` and `ImageIO` in Java.
 2. **Pixel Manipulation**: Discovered how to iterate over each pixel and extract color values.
 3. **Luminance Formula**: Applied the formula for converting RGB to greyscale: Value = int grayValue = (int) (red +
    green + blue) / 3
