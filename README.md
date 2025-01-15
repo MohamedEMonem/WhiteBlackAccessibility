@@ -2,6 +2,8 @@
 
 A software tool that converts JPG/PNG images into black and white or greyscale.
 
+https://github.com/user-attachments/assets/23901c11-eb82-4920-9fa8-8cc63961256b
+
 ## Features
 
 - Convert any JPG/PNG image to black and white or greyscale.
@@ -40,4 +42,3 @@ To install **White and Black Accessibility**, download and run the installer fro
 
 - Adding batch processing for multiple images.
 - Supporting additional file formats.
-
